@@ -596,7 +596,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Button
+  m_Text: Start
 --- !u!222 &701555618
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1391,10 +1391,10 @@ MonoBehaviour:
   cardCamera: {fileID: 918934595}
   rect:
     serializedVersion: 2
-    x: 810
-    y: 340
-    width: 300
-    height: 400
+    x: 544
+    y: 124
+    width: 832
+    height: 832
   status: {fileID: 836418747}
   buttonText: {fileID: 701555617}
   autoClearFolder: 1

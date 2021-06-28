@@ -58,6 +58,9 @@ public class CameraCapture : MonoBehaviour
         }
         else
         {
+            TimeSpan timeSpan = DateTime.Now - this.startTime;
+            this.status.text = string.Format("remain: {0:f1}s, capture times: {1}, capture times per second: {2:f1}",
+                                              timeSpan.TotalSeconds, this.captureTimes, this.captureTimes / timeSpan.TotalSeconds);
             this.buttonText.text = "Start";
             this.StopAllCoroutines();
         }
