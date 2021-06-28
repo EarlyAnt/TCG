@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,38 +39,42 @@ public class CameraCapture : MonoBehaviour
     {
     }
 
+    public void ClearFolder()
+    {
+        if (Directory.Exists(this.filePath))
+        {
+            foreach (string file in Directory.GetFiles(this.filePath))
+            {
+                File.Delete(file);
+            }
+        }
+    }
+
     public void Run()
     {
         this.isRunning = !this.isRunning;
         if (this.isRunning)
         {
             this.buttonText.text = "Stop";
-            if (Directory.Exists(this.filePath))
-            {
-                foreach (string file in Directory.GetFiles(this.filePath))
-                {
-                    File.Delete(file);
-                }
-            }
-
-            this.StopAllCoroutines();
+            this.ClearFolder();
+            this.StopCoroutine("CaptureCamera");
             this.StartCoroutine(this.CaptureCamera());
 
         }
         else
         {
+            this.buttonText.text = "Start";
             TimeSpan timeSpan = DateTime.Now - this.startTime;
             this.status.text = string.Format("remain: {0:f1}s, capture times: {1}, capture times per second: {2:f1}",
                                               timeSpan.TotalSeconds, this.captureTimes, this.captureTimes / timeSpan.TotalSeconds);
-            this.buttonText.text = "Start";
-            this.StopAllCoroutines();
+            this.StopCoroutine("CaptureCamera");
         }
     }
 
     private IEnumerator CaptureCamera()
     {
         this.startTime = DateTime.Now;
-        this.captureTimes = 1;
+        this.captureTimes = 0;
 
         while (this.isRunning)
         {
@@ -88,12 +93,17 @@ public class CameraCapture : MonoBehaviour
             RenderTexture.active = null;
             GameObject.Destroy(renderTexture);
             //最后将这些纹理数据，成一个png图片文件
-            byte[] bytes = screenShot.EncodeToPNG();
-            System.IO.File.WriteAllBytes(this.fileName, bytes);
+            this.StartCoroutine(this.WriteFile(screenShot.EncodeToPNG()));
 
             this.status.text = string.Format("remain: {0:f1}s, capture times: {1}", (DateTime.Now - this.startTime).TotalSeconds, this.captureTimes);
             this.captureTimes += 1;
-            yield return null;
+            yield return new WaitForEndOfFrame();
         }
+    }
+
+    private IEnumerator WriteFile(byte[] datas)
+    {
+        File.WriteAllBytes(this.fileName, datas);
+        yield return null;
     }
 }
