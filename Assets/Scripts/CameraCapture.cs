@@ -7,16 +7,24 @@ using UnityEngine.UI;
 
 public class CameraCapture : MonoBehaviour
 {
+    /************************************************属性与变量命名************************************************/
+    #region 页面UI组件
     [SerializeField]
     private Camera cardCamera;
     [SerializeField]
-    private Rect rect;
+    private Dropdown dropdown;
+    [SerializeField]
+    private List<Vector2> sizeList;
+    [SerializeField]
+    private Text fps;
     [SerializeField]
     private Text status;
     [SerializeField]
     private Text buttonText;
     [SerializeField]
     private bool autoClearFolder = true;
+    #endregion
+    #region 其他变量
     private int captureTimes = 0;
     private DateTime startTime = DateTime.Now;
     private bool isRunning = false;
@@ -34,11 +42,49 @@ public class CameraCapture : MonoBehaviour
             return string.Format("{0}/camera_capture_{1}.png", this.filePath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff"));
         }
     }
-
+    private int rectIndex = 0;
+    private List<Rect> rectList;
+    private Rect rect
+    {
+        get
+        {
+            return this.rectIndex >= 0 && this.rectIndex < this.rectList.Count ? this.rectList[this.rectIndex] : Rect.zero;
+        }
+    }
+    #endregion
+    /************************************************Unity方法与事件***********************************************/
+    private void Awake()
+    {
+        Application.targetFrameRate = 300;
+    }
     private void Start()
     {
-    }
+        if (!Directory.Exists(this.filePath))
+            Directory.CreateDirectory(this.filePath);
 
+        List<string> solutions = new List<string>();
+        this.rectList = new List<Rect>();
+        foreach (var size in this.sizeList)
+        {
+            float left = (Screen.width - size.x) / 2;
+            float top = (Screen.height - size.y) / 2;
+            this.rectList.Add(new Rect(left, top, size.x, size.y));
+            solutions.Add(string.Format("[{0}] {1}*{2}", solutions.Count + 1, size.x, size.y));
+        }
+
+        this.dropdown.ClearOptions();
+        this.dropdown.AddOptions(solutions);
+        this.dropdown.onValueChanged.AddListener(this.OnDropdownValueChanged);
+    }
+    private void Update()
+    {
+        this.fps.text = string.Format("fps: {0:f2}", 1f / Time.smoothDeltaTime);
+    }
+    private void OnDestroy()
+    {
+        this.dropdown.onValueChanged.RemoveListener(this.OnDropdownValueChanged);
+    }
+    /************************************************自 定 义 方 法************************************************/
     public void ClearFolder()
     {
         if (Directory.Exists(this.filePath))
@@ -49,7 +95,6 @@ public class CameraCapture : MonoBehaviour
             }
         }
     }
-
     public void Run()
     {
         this.isRunning = !this.isRunning;
@@ -64,13 +109,13 @@ public class CameraCapture : MonoBehaviour
         else
         {
             this.buttonText.text = "Start";
-            TimeSpan timeSpan = DateTime.Now - this.startTime;
-            this.status.text = string.Format("remain: {0:f1}s, capture times: {1}, capture times per second: {2:f1}",
-                                              timeSpan.TotalSeconds, this.captureTimes, this.captureTimes / timeSpan.TotalSeconds);
             this.StopCoroutine("CaptureCamera");
         }
     }
-
+    public void Quit()
+    {
+        Application.Quit();
+    }
     private IEnumerator CaptureCamera()
     {
         this.startTime = DateTime.Now;
@@ -95,15 +140,20 @@ public class CameraCapture : MonoBehaviour
             //最后将这些纹理数据，成一个png图片文件
             this.StartCoroutine(this.WriteFile(screenShot.EncodeToPNG()));
 
-            this.status.text = string.Format("remain: {0:f1}s, capture times: {1}", (DateTime.Now - this.startTime).TotalSeconds, this.captureTimes);
+            TimeSpan timeSpan = DateTime.Now - this.startTime;
+            this.status.text = string.Format("remain: {0:f1}s, capture times: {1}(per second: {2:f1})",
+                                             timeSpan.TotalSeconds, this.captureTimes, this.captureTimes / timeSpan.TotalSeconds);
             this.captureTimes += 1;
             yield return new WaitForEndOfFrame();
         }
     }
-
     private IEnumerator WriteFile(byte[] datas)
     {
         File.WriteAllBytes(this.fileName, datas);
         yield return null;
+    }
+    private void OnDropdownValueChanged(int value)
+    {
+        this.rectIndex = value;
     }
 }

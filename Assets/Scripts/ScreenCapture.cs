@@ -6,6 +6,7 @@ using UnityEngine.UI;
 
 public class ScreenCapture : MonoBehaviour
 {
+    /************************************************属性与变量命名************************************************/
     [SerializeField]
     private Text status;
     [SerializeField]
@@ -29,11 +30,13 @@ public class ScreenCapture : MonoBehaviour
             return string.Format("{0}/screen_capture_{1}.png", this.filePath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff"));
         }
     }
-
+    /************************************************Unity方法与事件***********************************************/
     private void Start()
     {
+        if (!Directory.Exists(this.filePath))
+            Directory.CreateDirectory(this.filePath);
     }
-
+    /************************************************自 定 义 方 法************************************************/
     public void Run()
     {
         this.isRunning = !this.isRunning;
@@ -58,7 +61,6 @@ public class ScreenCapture : MonoBehaviour
             this.StopAllCoroutines();
         }
     }
-
     private IEnumerator CaptureScreen()
     {
         this.startTime = DateTime.Now;

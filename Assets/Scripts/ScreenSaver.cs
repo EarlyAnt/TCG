@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class ScreenSaver : MonoBehaviour
 {
+    /************************************************属性与变量命名************************************************/
     [SerializeField]
     private Image imageUp;
     [SerializeField]
@@ -14,7 +15,7 @@ public class ScreenSaver : MonoBehaviour
     [SerializeField]
     private List<Sprite> imageList;
     private int index;
-
+    /************************************************Unity方法与事件***********************************************/
     private void Start()
     {
         this.imageUp.sprite = this.imageList[0];
@@ -23,7 +24,7 @@ public class ScreenSaver : MonoBehaviour
 
         this.InvokeRepeating("RefreshScreen", 0f, this.interval);
     }
-
+    /************************************************自 定 义 方 法************************************************/
     private void RefreshScreen()
     {
         this.imageDown.sprite = this.imageList[this.index];
