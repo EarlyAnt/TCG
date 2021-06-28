@@ -26,11 +26,12 @@ public class ScreenSaver : MonoBehaviour
 
     private void RefreshScreen()
     {
+        this.imageDown.sprite = this.imageList[this.index];
         int nextIndex = (this.index + 1) % this.imageList.Count;
-        this.imageUp.DOFade(0f, 0.5f).onComplete = () =>
+        this.imageUp.DOFade(0f, 1f).onComplete = () =>
         {
-            this.imageUp.sprite = this.imageDown.sprite;
-            this.imageDown.sprite = this.imageList[nextIndex];
+            this.imageUp.sprite = this.imageList[this.index];
+            this.imageUp.DOFade(1f, 0f);
             this.index = nextIndex;
         };
     }
