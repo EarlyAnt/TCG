@@ -12,7 +12,9 @@ public class CameraCapture : MonoBehaviour
     [SerializeField]
     private Camera cardCamera;
     [SerializeField]
-    private Dropdown dropdown;
+    private Dropdown solutionList;
+    [SerializeField]
+    private Dropdown textureFormatList;
     [SerializeField]
     private List<Vector2> sizeList;
     [SerializeField]
@@ -42,16 +44,22 @@ public class CameraCapture : MonoBehaviour
             return string.Format("{0}/camera_capture_{1}.png", this.filePath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss-fff"));
         }
     }
-    private int rectIndex = 0;
     private List<Rect> rectList;
     private Rect rect
     {
         get
         {
-            return this.rectIndex >= 0 && this.rectIndex < this.rectList.Count ? this.rectList[this.rectIndex] : Rect.zero;
+            return this.rectList != null && this.rectList.Count > 0 ? this.rectList[this.solutionList.value] : Rect.zero;
         }
     }
     private List<byte[]> imageBuffer;
+    private TextureFormat textureFormat
+    {
+        get
+        {
+            return (TextureFormat)Enum.Parse(typeof(TextureFormat), this.textureFormatList.captionText.text);
+        }
+    }
     #endregion
     /************************************************Unity方法与事件***********************************************/
     private void Awake()
@@ -73,9 +81,21 @@ public class CameraCapture : MonoBehaviour
             solutions.Add(string.Format("[{0}] {1}*{2}", solutions.Count + 1, size.x, size.y));
         }
 
-        this.dropdown.ClearOptions();
-        this.dropdown.AddOptions(solutions);
-        this.dropdown.onValueChanged.AddListener(this.OnDropdownValueChanged);
+        this.solutionList.ClearOptions();
+        this.solutionList.AddOptions(solutions);
+
+        int defaultFormatIndex = 0;
+        List<string> formats = new List<string>();
+        foreach (var format in Enum.GetValues(typeof(TextureFormat)))
+        {
+            string formatString = ((TextureFormat)format).ToString("G");
+            formats.Add(formatString);
+            if (formatString == "RGB24")
+                defaultFormatIndex = Array.IndexOf(Enum.GetValues(typeof(TextureFormat)), format);
+        }
+        this.textureFormatList.ClearOptions();
+        this.textureFormatList.AddOptions(formats);
+        this.textureFormatList.value = defaultFormatIndex;
     }
     private void Update()
     {
@@ -83,7 +103,6 @@ public class CameraCapture : MonoBehaviour
     }
     private void OnDestroy()
     {
-        this.dropdown.onValueChanged.RemoveListener(this.OnDropdownValueChanged);
     }
     /************************************************自 定 义 方 法************************************************/
     public void ClearFolder()
@@ -131,7 +150,7 @@ public class CameraCapture : MonoBehaviour
         this.imageBuffer = new List<byte[]>();
         //创建一个RenderTexture对象
         RenderTexture renderTexture = new RenderTexture(Screen.width, Screen.height, 0);
-        Texture2D screenShot = new Texture2D((int)this.rect.width, (int)this.rect.height, TextureFormat.RGB24, false);
+        Texture2D screenShot = new Texture2D((int)this.rect.width, (int)this.rect.height, this.textureFormat, false);
 
         while (this.isRunning)
         {
@@ -156,9 +175,9 @@ public class CameraCapture : MonoBehaviour
 
             //最后将这些纹理数据，成一个png图片文件
             if (this.debugParams.SaveAsFile.isOn)
-                this.StartCoroutine(this.WriteFile(screenShot.EncodeToPNG()));
+                this.StartCoroutine(this.WriteFile(this.GetImageData(screenShot)));
             if (this.debugParams.SaveInMemory.isOn)
-                this.imageBuffer.Add(screenShot.EncodeToPNG());
+                this.imageBuffer.Add(this.GetImageData(screenShot));
 
             TimeSpan timeSpan = DateTime.Now - this.startTime;
             this.status.text = string.Format("remain: {0:f1}s, capture times: {1}(per second: {2:f1})",
@@ -168,14 +187,19 @@ public class CameraCapture : MonoBehaviour
         }
         GameObject.Destroy(renderTexture);
     }
+    private byte[] GetImageData(Texture2D screenShot)
+    {
+        if (this.debugParams.EncodeToPNG.isOn)
+            return screenShot.EncodeToPNG();
+        else if (this.debugParams.EncodeToJPG.isOn)
+            return screenShot.EncodeToJPG();
+        else
+            return screenShot.GetRawTextureData();
+    }
     private IEnumerator WriteFile(byte[] datas)
     {
         File.WriteAllBytes(this.fileName, datas);
         yield return null;
-    }
-    private void OnDropdownValueChanged(int value)
-    {
-        this.rectIndex = value;
     }
 }
 
@@ -184,6 +208,8 @@ public class DebugParameters
 {
     public Toggle SaveAsFile;
     public Toggle SaveInMemory;
+    public Toggle EncodeToPNG;
+    public Toggle EncodeToJPG;
     public Toggle ReadPixes;
     public Toggle CameraRender;
 }
