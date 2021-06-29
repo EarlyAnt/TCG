@@ -22,7 +22,7 @@ public class CameraCapture : MonoBehaviour
     [SerializeField]
     private Text buttonText;
     [SerializeField]
-    private bool autoClearFolder = true;
+    private DebugParameters debugParams;
     #endregion
     #region 其他变量
     private int captureTimes = 0;
@@ -51,11 +51,12 @@ public class CameraCapture : MonoBehaviour
             return this.rectIndex >= 0 && this.rectIndex < this.rectList.Count ? this.rectList[this.rectIndex] : Rect.zero;
         }
     }
+    private List<byte[]> imageBuffer;
     #endregion
     /************************************************Unity方法与事件***********************************************/
     private void Awake()
     {
-        Application.targetFrameRate = 300;
+        Application.targetFrameRate = 120;
     }
     private void Start()
     {
@@ -94,6 +95,12 @@ public class CameraCapture : MonoBehaviour
                 File.Delete(file);
             }
         }
+
+        if (this.imageBuffer != null && this.imageBuffer.Count > 0)
+        {
+            this.imageBuffer.Clear();
+            GC.Collect();
+        }
     }
     public void Run()
     {
@@ -121,24 +128,37 @@ public class CameraCapture : MonoBehaviour
         this.startTime = DateTime.Now;
         this.captureTimes = 0;
 
+        this.imageBuffer = new List<byte[]>();
+        //创建一个RenderTexture对象
+        RenderTexture renderTexture = new RenderTexture(Screen.width, Screen.height, 0);
+        Texture2D screenShot = new Texture2D((int)this.rect.width, (int)this.rect.height, TextureFormat.RGB24, false);
+
         while (this.isRunning)
         {
-            //创建一个RenderTexture对象
-            RenderTexture renderTexture = new RenderTexture(Screen.width, Screen.height, 0);
             //临时设置相关相机的targetTexture, 并手动渲染相关相机
-            this.cardCamera.targetTexture = renderTexture;
-            this.cardCamera.Render();
-            //激活这个rt, 并从中中读取像素。  
-            RenderTexture.active = renderTexture;
-            Texture2D screenShot = new Texture2D((int)this.rect.width, (int)this.rect.height, TextureFormat.RGB24, false);
-            screenShot.ReadPixels(this.rect, 0, 0);// 注：这个时候，它是从RenderTexture.active中读取像素
-            screenShot.Apply();
+            if (this.debugParams.CameraRender.isOn)
+            {
+                this.cardCamera.targetTexture = renderTexture;
+                this.cardCamera.Render();
+                //激活这个rt, 并从中中读取像素。  
+                RenderTexture.active = renderTexture;
+            }
+
+            if (this.debugParams.ReadPixes.isOn)
+            {
+                screenShot.ReadPixels(this.rect, 0, 0);//这个时候，它是从RenderTexture.active中读取像素
+                //screenShot.Apply();
+            }
+
             //重置相关参数，以使用this.cardCamera继续在屏幕上显示
             this.cardCamera.targetTexture = null;
             RenderTexture.active = null;
-            GameObject.Destroy(renderTexture);
+
             //最后将这些纹理数据，成一个png图片文件
-            this.StartCoroutine(this.WriteFile(screenShot.EncodeToPNG()));
+            if (this.debugParams.SaveAsFile.isOn)
+                this.StartCoroutine(this.WriteFile(screenShot.EncodeToPNG()));
+            if (this.debugParams.SaveInMemory.isOn)
+                this.imageBuffer.Add(screenShot.EncodeToPNG());
 
             TimeSpan timeSpan = DateTime.Now - this.startTime;
             this.status.text = string.Format("remain: {0:f1}s, capture times: {1}(per second: {2:f1})",
@@ -146,6 +166,7 @@ public class CameraCapture : MonoBehaviour
             this.captureTimes += 1;
             yield return new WaitForEndOfFrame();
         }
+        GameObject.Destroy(renderTexture);
     }
     private IEnumerator WriteFile(byte[] datas)
     {
@@ -156,4 +177,13 @@ public class CameraCapture : MonoBehaviour
     {
         this.rectIndex = value;
     }
+}
+
+[Serializable]
+public class DebugParameters
+{
+    public Toggle SaveAsFile;
+    public Toggle SaveInMemory;
+    public Toggle ReadPixes;
+    public Toggle CameraRender;
 }

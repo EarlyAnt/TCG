@@ -1,0 +1,46 @@
+--------------------<第1组>
+[分辨率：416*416]
+1.全关闭：			60 fps
+2.Camera Render：	59 fps
+3.Read Pixes：		43 fps
+4.Save As File：	16 fps
+5.Save In Memory：	17 fps
+
+
+[分辨率：832*832]
+1.全关闭：			60 fps
+2.Camera Render：	59 fps
+3.Read Pixes：		30 fps
+4.Save As File：	9.1 fps
+5.Save In Memory：	9.6 fps
+
+
+--------------------<第2组>
+[分辨率：416*416]
+1.全关闭：			60 fps
+2.Camera Render：	59 fps
+3.Read Pixes：		52 fps
+4.Save As File：	21 fps
+5.Save In Memory：	20 fps
+
+
+[分辨率：832*832]
+1.全关闭：			60 fps
+2.Camera Render：	59 fps
+3.Read Pixes：		38 fps
+4.Save As File：	10.7 fps
+5.Save In Memory：	10.3 fps
+
+
+
+
+
+
+
+
+
+
+
+
+
+
